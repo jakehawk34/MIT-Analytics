@@ -107,3 +107,6 @@ tapply(WHO$Over60, WHO$Region, mean)
 
 # Splits the data by region and computes the min of LiteracyRate, excluding null values
 tapply(WHO$LiteracyRate, WHO$Region, min, na.rm = TRUE)
+
+# Average child mortality rate in each region
+tapply(WHO$ChildMortality, WHO$Region, mean)

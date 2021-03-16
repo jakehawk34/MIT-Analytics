@@ -75,13 +75,74 @@ summary(Question3)
 # A model with a lower threshold will have a higher sensitivity and a lower specificity
 
 # Compute classification tables using different threshold values
+
 # Threshold value of 0.5
 table(qualityTrain$PoorCare, predictTrain > 0.5)
-# 70 cases with actual good care and predicted good care
-# 10 cases with actual poor care and predicted poor care
-# 4 cases with actual good care, but predicted poor care
-# 15 cases with actual poor care, but predicted good care
+# 70 cases with actual good care and predicted good care (true positive)
+# 10 cases with actual poor care and predicted poor care (true negative)
+# 4 cases with actual good care, but predicted poor care (false positive)
+# 15 cases with actual poor care, but predicted good care (false negative)
 
+# Sensitivity or true positive rate
+10 / (10 + 15)
+# Specificity or true negative rate
+70 / (70 + 4)
 
+# Threshold value of 0.5
+table(qualityTrain$PoorCare, predictTrain > 0.7)
+# Sensitivity goes down
+8 / (8 + 17)
+# Specificity goes up
+73 / (73 + 1)
 
+# Threshold value of 0.3
+table(qualityTrain$PoorCare, predictTrain > 0.3)
+# Sensitivity goes up
+13 / (13 + 12)
+# Specificity goes down
+67 / (67 + 7)
+
+# Which threshold value should we choose?
+# A Receiver Operator Characteristic curve, or ROC curve, can help you decide which value of the threshold is best.
+# Sensitivity of true positive rate on the y-axis
+# False positive or 1 - specificity rate on the x-axis
+# ROC curve always starts at (0, 0), which corresponds to a threshold value of 1
+# ROC curve always ends at (1, 1), which corresponds to a threshold value of 0
+
+# To generate ROC curves in R, we need to install a new package.
+install.packages("ROCR")
+library(ROCR)
+
+# Use the predictions from predictTrain to create the ROC curve
+# The prediction function takes two arguments
+# The first argument is the predictions we made with our model
+# The second argument is the true outcomes of the data points
+ROCRpred = prediction(predictTrain, qualityTrain$PoorCare)
+# We'll call the output of this ROCRperf, and use the performance function, 
+# which takes as arguments the output of the prediction function, and then what we want on the x and y-axes.
+# In this case, it's true positive rate, or "tpr", and false positive rate, or "fpr".
+ROCRperf = performance(ROCRpred, "tpr", "fpr")
+plot(ROCRperf)
+# Add colors to the ROCR plot
+plot(ROCRperf, colorize = TRUE)
+# Add threshold labels to the plot
+plot(ROCRperf, colorize = TRUE, print.cutoffs.at=seq(0,1,0.1), text.adj=c(-0.2,1.7))
+
+# So the Area Under the Curve shows an absolute measure
+
+# N = number of observations
+# Overall accuracy = (True Positives (TP) + True Negatives (TN)) / N
+# Overall error rate = (False Positives (FP) + False Negatives (FN)) / N
+# False negative error rate = FN / (FN + TP)
+# False positive error rate = FP / (FP + TN)
+
+# Quick Question 5
+Question5 = glm(PoorCare ~ OfficeVisits + Narcotics, data = qualityTrain, family=binomial)
+predictTest = predict(Question5, type="response", newdata=qualityTest)
+# You can compute the test set AUC by running the following two commands in R:
+ROCRpredTest = prediction(predictTest, qualityTest$PoorCare)
+auc = as.numeric(performance(ROCRpredTest, "auc")@y.values)
+auc
+
+# Altogether, there has been 2,400 studies written using the Framingham data.
 

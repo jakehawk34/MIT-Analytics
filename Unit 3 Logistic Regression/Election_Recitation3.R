@@ -97,7 +97,7 @@ table(Test$Republican, sign(Test$Rasmussen))
 TestPrediction = predict(mod2, newdata = Test, type = "response")
 table(Test$Republican, TestPrediction >= 0.5)
 
-# Look at the one msitake the prediction made
+# Look at the one mistake the prediction made
 subset(Test, TestPrediction >= 0.5 & Republican == 0)
 
 # Rasmussen gave the Republican a two-point lead, SurveyUSA said both candidates were tied,

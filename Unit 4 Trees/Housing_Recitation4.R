@@ -54,3 +54,85 @@ points(boston$LON[latlonlm$fitted.values>=21.2], boston$LAT[latlonlm$fitted.valu
 # The linear regression model says Boston is mostly above the median housing prices
 # The model completely ignores the right side of the plot.
 
+# Try regression trees
+library(rpart)
+library(rpart.plot)
+
+latlontree = rpart(MEDV ~ LAT + LON, data = boston)
+prp(latlontree)
+# In regression trees, we predict the average of the median house price in the bucket/leaf
+
+plot(boston$LON, boston$LAT)
+points(boston$LON[boston$MEDV>=21.2], boston$LAT[boston$MEDV>=21.2], col="red", pch=19)
+# Predict what the tree thinks is above the median house price
+fittedvalues = predict(latlontree)
+points(boston$LON[fittedvalues>=21.2], boston$LAT[fittedvalues>=21.2], col="blue", pch="$")
+# We're able to make nonlinear predictions with longitude and latitude.
+# However, the tree was quite complicated, so it might be overfitting the data.
+# We can fix this by changing the minbucket value in our tree
+
+latlontree = rpart(MEDV ~ LAT + LON, data = boston, minbucket=50)
+plot(latlontree)
+text(latlontree)
+# Far fewer splits and easier to interpret
+plot(boston$LON, boston$LAT)
+
+plot(latlontree)
+text(latlontree)
+# Identify the low value area in Boston using the values from the tree splits
+abline(v = -71.07)
+abline(h = 42.17)
+abline(h = 42.21)
+points(boston$LON[boston$MEDV>=21.2], boston$LAT[boston$MEDV>=21.2], col="red", pch=19)
+
+# Show that regression trees can predict housing prices better than linear regression
+library(caTools)
+set.seed(123)
+split = sample.split(boston$MEDV, SplitRatio = 0.7)
+train = subset(boston, split == TRUE)
+test = subset(boston, split == FALSE)
+
+linreg = lm(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data = train)
+summary(linreg)
+
+linreg.predict = predict(linreg, newdata = test)
+linreg.sse = sum((test$MEDV - linreg.predict)^2) # SSE
+
+# Can we beat this SSE using a tree?
+tree = rpart(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data = train)
+prp(tree)
+# RM appears three times, NOX appear two times, CRIM and AGE each appear once
+# Variables that had importance in linear regression that aren't in the tree are: PTRATIO, TAX, RAD, DIS and CHAS
+tree.pred = predict(tree, newdata = test)
+tree.sse = sum((test$MEDV - tree.pred)^2)
+# Regression trees are not as good as linear regression for this problem.
+
+# The CP Parameter - "Complexity Parameter"
+# Intuition tells us that a more complex tree is bad for generalization, so we should punish complexity.
+# Our new goal is to find a tree that minimizes the sum of the RSS at each leaf, plus lambda, times S, for the number of splits.
+# Then we can define cp=lambda/RSS(no splits). When you're actually using cp in your R code,
+# you don't need to think exactly what it means-- just that small numbers of cp encourage large trees, and large values of cp encourage small trees.
+
+# Build one last tree using cross-validation
+
+library(caret)
+library(e1071)
+
+# tr tries a range of values for cp
+tr.control = trainControl(method = "cv", number = 10)
+cp.grid = expand.grid(.cp = (0:10)*0.001)
+tr = train(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data = train, method="rpart", trControl=tr.control, tuneGrid=cp.grid)
+tr
+
+best.tree = tr$finalModel
+prp(best.tree)
+best.tree.pred = predict(best.tree, newdata = test)
+best.tree.sse = sum((best.tree.pred - test$MEDV)^2)
+
+best.tree.sse # 3675.766
+tree.sse # 4328.988
+linreg.sse # 3037.088
+
+# Trees aren't always the best method you have available to you. But you should always try cross validating them to get as much performance out of them as you can.
+
+

@@ -1,7 +1,7 @@
 # Assignment 5
 # Detecting Vandalism on Wikipedia
 
-wiki = read.csv("wiki.csv")
+wiki = read.csv("wiki.csv", stringsAsFactors = FALSE)
 
 wiki$Vandal = as.factor(wiki$Vandal)
 table(wiki$Vandal)
@@ -109,6 +109,7 @@ wikiWords2$NumWordsAdded = rowSums(as.matrix(dtmAdded))
 wikiWords2$NumWordsRemoved = rowSums(as.matrix(dtmRemoved))
 mean(wikiWords2$NumWordsAdded)
 
+
 # What is the new accuracy of the CART model on the test set?
 wikiTrain3 = subset(wikiWords2, split==TRUE)
 wikiTest3 = subset(wikiWords2, split==FALSE)
@@ -118,7 +119,7 @@ table(wikiTest3$Vandal, predictCART3)
 (514 + 248) / nrow(wikiTest3)
 
 # We have two pieces of "metadata" (data about data) that we haven't yet used. Make a copy of wikiWords2, and call it wikiWords3:
-wikiWords4 = wikiWords3
+wikiWords4 = wikiWords2
 
 #Then add the two original variables Minor and Loggedin to this new data frame:
 wikiWords4$Minor = wiki$Minor
@@ -132,3 +133,13 @@ wikiCART4 = rpart(Vandal ~ ., data=wikiTrain4, method="class")
 predictCART4 = predict(wikiCART4, newdata=wikiTest4, type="class")
 table(wikiTest4$Vandal, predictCART4)
 (595 + 241) / nrow(wikiTest4)
+
+# There is a substantial difference in the accuracy of the model using the meta data. 
+# Is this because we made a more complicated model?
+
+# Plot the CART tree. How many splits are there in the tree?
+prp(wikiCART4)
+
+# By adding new independent variables, 
+# we were able to significantly improve our accuracy without making the model more complicated!
+
